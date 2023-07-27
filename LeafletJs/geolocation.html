@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Geolocation</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <p>Enter Destination : </p>
+    <input type="text" id="else">
+
+    <button id="but">Add</button>
+
+    <p>Your Location is :<span id="spantext"></span></p>
+
+
+    <div id="map" style="width:800px; height: 400px; display: block; margin: auto;"></div>
+
+</body>
+
+<script src="https://unpkg.com/leaflet@1.8.0/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+
+<script>
+
+    const buttontoclick = document.getElementById('but')
+
+    const cityname = document.getElementById('else');
+    
+    let realcityname;
+
+    cityname.addEventListener('keyup',(e)=>{
+    realcityname=e.target.value;
+    })
+   
+    buttontoclick.addEventListener('click', () => { 
+        getendpoints();
+    })
+
+    const url = `https://forward-reverse-geocoding.p.rapidapi.com/v1/search?q=${realcityname}&accept-language=en&polygon_threshold=0.0`;
+
+    const options = {
+        method: 'GET',
+        headers: {
+            'X-RapidAPI-Key': '4638530cfemshb5f9bea28be8a72p1d9bb8jsnef9a6f833608',
+            
+            'X-RapidAPI-Host': 'forward-reverse-geocoding.p.rapidapi.com'
+        }
+    };
+
+    const getendpoints = async () => {
+        try {
+            const response = await fetch(url, options);
+            const result = await response.json();
+            const newresult=JSON.stringify(result);
+            alert(newresult);
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+   
+
+
+    var map = L.map('map').setView([28.2380, 83.9956], 11);
+
+    mapLink = "<a href='http://openstreetmap.org'>OpenStreetMap</a>";
+
+    L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', { attribution: 'Leaflet &copy; ' + mapLink + ', contribution', maxZoom: 18 }).addTo(map);
+
+    var taxiIcon = L.icon({
+        iconUrl: 'img/taxi.png',
+        iconSize: [70, 70]
+    })
+
+    var marker, circle, lati = 28.2380, longti = 83.9956;
+
+    if (!navigator.geolocation) {
+        console.log("Your browser doesn't support geolocation feature!")
+    } else {
+        navigator.geolocation.getCurrentPosition(getPosition)
+    }
+
+    function getPosition(position) {
+        var lat = position.coords.latitude
+        var long = position.coords.longitude
+        var accuracy = position.coords.accuracy
+
+        var lati = position.coords.latitude
+        var longti = position.coords.longitude
+
+        if (marker) {
+            map.removeLayer(marker)
+        }
+
+        if (circle) {
+            map.removeLayer(circle)
+        }
+
+        marker = L.marker([lat, long], { icon: taxiIcon }).addTo(map);
+        circle = L.circle([lat, long], { radius: accuracy })
+
+        var featureGroup = L.featureGroup([marker, circle]).addTo(map)
+
+        map.fitBounds(featureGroup.getBounds())
+
+        console.log("Your coordinate is: Lat: " + lat + " Long: " + long + " Accuracy: " + accuracy)
+    }
+
+    map.on('click', function (e) {
+        console.log(e)
+        var newMarker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
+        L.Routing.control({
+            waypoints: [
+                L.latLng(lati, longti),
+                L.latLng(e.latlng.lat, e.latlng.lng)
+            ]
+        }).on('routesfound', function (e) {
+            var routes = e.routes;
+            console.log(routes);
+            e.routes[0].coordinates.forEach(function (coord, index) {
+                setTimeout(function () {
+                    marker.setLatLng([coord.lat, coord.lng]);
+                }, 100 * index)
+            })
+        }).addTo(map);
+    });
+
+
+</script>
+
+
+
+</html>

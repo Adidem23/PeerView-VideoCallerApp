@@ -1,0 +1,1 @@
+For Routes in NextJS We Have to Add New Folder in App directory and Name each file as page.tsx or page.jsx on your commands  
